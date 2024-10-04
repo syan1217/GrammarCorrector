@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .chat-container {
+            width: 50%;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 500px;
+            overflow-y: auto;
+        }
+        .input-container {
+            display: flex;
+            margin-top: 10px;
+        }
+        .chat-input {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 16px;
+        }
+        .chat-button {
+            padding: 10px;
+            font-size: 16px;
+        }
+        .chat-bubble {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+        }
+        .user {
+            background-color: #e1ffc7;
+            align-self: flex-end;
+        }
+        .bot {
+            background-color: #f0f0f0;
+            align-self: flex-start;
+        }
+        /* Add CSS for the loading animation */
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-left-color: #000;
+            animation: spin 1s linear infinite;
+            margin-left: 5px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container" id="chat-container"></div>
+
+    <div class="input-container">
+        <input type="text" id="chat-input" class="chat-input" placeholder="Type your message..." />
+        <button id="chat-button" class="chat-button">Send</button>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const chatInput = document.getElementById('chat-input');
+        const chatButton = document.getElementById('chat-button');
+
+        chatButton.addEventListener('click', () => {
+            const message = chatInput.value;
+            if (message.trim()) {
+                appendChatBubble(message, 'user');
+                chatInput.value = '';
+
+                // Show loading indicator in the chat bubble while waiting for a response
+                const loadingBubble = appendChatBubble('','bot', true);
+
+                // Send the message to the Flask backend
+                fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Replace the loading bubble with the actual response
+                    loadingBubble.textContent = data.response;
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                });
+            }
+        });
+
+        function appendChatBubble(text, sender, isLoading = false) {
+            const bubble = document.createElement('div');
+            bubble.classList.add('chat-bubble', sender);
+            if (isLoading) {
+                // Add loading animation
+                bubble.innerHTML = `${text} <span class="loading"></span>`;
+            } else {
+                bubble.textContent = text;
+            }
+            chatContainer.appendChild(bubble);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return bubble;
+        }
+    </script>
+</body>
+</html>
